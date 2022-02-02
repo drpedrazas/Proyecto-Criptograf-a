@@ -1,6 +1,7 @@
 import string
 import itertools
-
+from turtle import done
+import numpy as np
 from sympy import N
 from aux_prime_functions import *
 from elgamal import gen_key
@@ -11,17 +12,18 @@ class Rabin:
         self.p, self.q, self.n = self.gen_key()
 
     def gen_key(self):
-        p = find_prime(16)
-        q = find_prime(16)
+        p = find_prime(30,60)
+        q = find_prime(30,60)
         p_done = (p % 4) == 3
         q_done = (q % 4) == 3
         while not (p_done and q_done):
             if not p_done:
-                p = find_prime(128)
+                p = find_prime(30,60)
                 p_done = (p % 4) == 3
             if not q_done:
-                q = find_prime(128)
+                q = find_prime(30,60)
                 q_done = (q % 4) == 3
+        print(p,q)
         return p, q , p*q
 
     def get_key(self):
@@ -36,6 +38,8 @@ class Rabin:
     def encrypt(self, m):
         each = [hex(ord(i))[2:]  for i in m]
         number = "0x"+"".join(each)
+        print("Sin encriptar:" , int(number,16))
+        print("Encriptado: ", (int(number,16) ** 2) % self.n)
         return (int(number,16) ** 2) % self.n
 
     def extendedEuclid(self,a, b):
@@ -46,7 +50,6 @@ class Rabin:
         r = b
         old_r = a
         while r != 0:
-            print(old_r,old_s,old_t)
             q = int(old_r / r)
             tr = r
             r = int(old_r - (q * r))
@@ -60,8 +63,10 @@ class Rabin:
         return old_r, old_s, old_t
 
     def decrypt(self,c):
-        root_p = (c ** int((self.p + 1) / 4)) % self.p
-        root_q = (c ** int((self.q + 1) / 4)) % self.q
+        print("texto encriptado: ",c)
+        root_p = modexp(c,int((self.p + 1) / 4),self.p)
+        root_q = modexp(c,int((self.q + 1) / 4),self.q)
+        print("made it")
         y_p, y_q = self.extendedEuclid(self.p,self.q)[1:]
         r_1 = (y_p*self.p*root_q + y_q * self.q * root_p) % self.n
         if r_1 < 0:
@@ -71,10 +76,26 @@ class Rabin:
         if r_3 < 0:
             r_3 = self.n + r_3
         r_4 = self.n - r_3
-        return r_1, r_2, r_3, r_4
+        clear_text_options = [hex(r_1)[2:], hex(r_2)[2:], hex(r_3)[2:], hex(r_4)[2:]]
+        clear_text_options = list(filter(lambda x : len(x) % 2 == 0, clear_text_options))
+        clear_texts = list()
+        print(modexp(r_1,2,self.n) == c,modexp(r_2,2,self.n) == c,modexp(r_3,2,self.n) == c,modexp(r_4,2,self.n) == c)
+        for t in clear_text_options:
+            text = ""
+            t = [u for u in t]
+            while t != list():
+                s = ""
+                s += t.pop(0)
+                s += t.pop(0)
+                character = chr(int("0x"+s,16))
+                text += character
+            clear_texts.append(text)
+        return clear_texts
+
 
 r = Rabin()
-r.p = 11
-r.q = 7
-r.n = 77
-print(r.decrypt(23))
+r.p = 7
+r.q = 11
+r.n = 11 * 7
+encriptado = r.encrypt("Hello")
+print(r.decrypt(encriptado))
