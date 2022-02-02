@@ -8,20 +8,20 @@ from elgamal import gen_key
 
 class Rabin:
 
-    def __init__(self, p = None, q = None):
-        self.p, self.q, self.n = self.gen_key()
+    def __init__(self, bits, p = None, q = None):
+        self.p, self.q, self.n = self.gen_key(bits)
 
-    def gen_key(self):
-        p = find_prime(30,60)
-        q = find_prime(30,60)
+    def gen_key(self,bits):
+        p = find_prime(bits,60)
+        q = find_prime(bits,60)
         p_done = (p % 4) == 3
         q_done = (q % 4) == 3
         while not (p_done and q_done):
             if not p_done:
-                p = find_prime(30,60)
+                p = find_prime(bits,60)
                 p_done = (p % 4) == 3
             if not q_done:
-                q = find_prime(30,60)
+                q = find_prime(bits,60)
                 q_done = (q % 4) == 3
         print(p,q)
         return p, q , p*q
@@ -79,7 +79,6 @@ class Rabin:
         clear_text_options = [hex(r_1)[2:], hex(r_2)[2:], hex(r_3)[2:], hex(r_4)[2:]]
         clear_text_options = list(filter(lambda x : len(x) % 2 == 0, clear_text_options))
         clear_texts = list()
-        print(modexp(r_1,2,self.n) == c,modexp(r_2,2,self.n) == c,modexp(r_3,2,self.n) == c,modexp(r_4,2,self.n) == c)
         for t in clear_text_options:
             text = ""
             t = [u for u in t]
@@ -91,11 +90,3 @@ class Rabin:
                 text += character
             clear_texts.append(text)
         return clear_texts
-
-
-r = Rabin()
-r.p = 7
-r.q = 11
-r.n = 11 * 7
-encriptado = r.encrypt("Hello")
-print(r.decrypt(encriptado))
