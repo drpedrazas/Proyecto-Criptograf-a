@@ -24,6 +24,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
 import pyqtgraph as pg
+import dill
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import (Qt, QFile, QDate, QTime, QSize, QTimer, QRect, QRegExp, QTranslator,
                           QLocale, QLibraryInfo, QSize)
@@ -2353,7 +2354,7 @@ class PublicKeyScreen(QDialog):
         ********************************Gamal Tab***********************************
         """
         def gen_prime_numGamal():
-            p1 = elgamal.find_prime()
+            p1 = elgamal.find_prime(32, 5)
             primeGamal.setPlainText(str(p1))
         def calculate_parametersGamal():
             prime = primeGamal.toPlainText()
@@ -2398,16 +2399,21 @@ class PublicKeyScreen(QDialog):
             p_text = plaintxtPublicGamal.toPlainText()
             cipher = elgamal.encrypt(p, alpha, beta, p_text)
             ciphertxtPublicGamal.setPlainText(cipher)
-        def decrypt_Gamal():
+        def decrypt_Gamal(txt_curvefile):
             if a_ptGamal.toPlainText() == '' or primeGamal.toPlainText() == '':
                 QMessageBox.critical(None, 'Missing Parameters',
                                      'Insert private key parameters and prime number first',
                                      QMessageBox.Ok)
                 return
+            elif txt_curvefile == '':
+                QMessageBox.critical(None, 'Missing Elliptic Curve File',
+                                     'Select the elliptic curve file first',
+                                     QMessageBox.Ok)
+                return
             p = int(primeGamal.toPlainText())
             a = int(a_ptGamal.toPlainText())
             cipher = ciphertxtPublicGamal.toPlainText()
-            plain = elgamal.decrypt(p, a, cipher)
+            plain = elgamal.decrypt(p, a, cipher, txt_curvefile)
             plaintxtPublicGamal.setPlainText(plain)
         ElGamalWidget = QtWidgets.QWidget()
         tabPublicWidget.addTab(ElGamalWidget, "ElGamal (Menezes - Vanstone)")
@@ -2419,7 +2425,6 @@ class PublicKeyScreen(QDialog):
         #Group Box Prime Number
         groupBox_primegamal = QGroupBox('Prime Number')
         groupBoxLayout_primegamal = QVBoxLayout(groupBox_primegamal)
-        txt_pg = QLabel('Please enter a prime number that has 256 bits in its binary representation or \ngenerate it with the button below for ease.')
         groupBoxLayout_pgamal = QHBoxLayout()
         groupBoxLayout_genprimegamal = QHBoxLayout()
         txt_pgamal = QLabel('Prime = ')
@@ -2433,7 +2438,6 @@ class PublicKeyScreen(QDialog):
         boton_autogamal.clicked.connect(gen_prime_numGamal)
         groupBoxLayout_genprimegamal.addWidget(boton_autogamal)
         groupBoxLayout_genprimegamal.setAlignment(QtCore.Qt.AlignCenter)
-        groupBoxLayout_primegamal.addWidget(txt_pg)
         groupBoxLayout_primegamal.addLayout(groupBoxLayout_pgamal)
         groupBoxLayout_primegamal.addLayout(groupBoxLayout_genprimegamal)
         v1boxElGamal.addWidget(groupBox_primegamal)
@@ -2482,17 +2486,36 @@ class PublicKeyScreen(QDialog):
         boton_limpiar_Gamal.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
         boton_limpiar_Gamal.setFixedWidth(150)
         boton_cipher_Gamal.clicked.connect(encrypt_Gamal)
-        boton_decipher_Gamal.clicked.connect(decrypt_Gamal)
+        boton_decipher_Gamal.clicked.connect(lambda: decrypt_Gamal(txt_curvefile.text()))
         boton_limpiar_Gamal.clicked.connect(clean_Gamal)
         buttonsGamal_layout.addWidget(boton_cipher_Gamal)
         buttonsGamal_layout.addWidget(boton_decipher_Gamal)
         buttonsGamal_layout.addWidget(boton_limpiar_Gamal)
         buttonsGamal_layout.setAlignment(Qt.AlignCenter)
         v1boxElGamal.addWidget(groupBox_buttonsGamal)
+        groupBox_curveFile = QGroupBox('Elliptic Curve')
+        curveFile_layout = QVBoxLayout(groupBox_curveFile)
+        curve_txt = QLabel('To decrypt, it is necessary to select the file with elliptic curve parameters\nthat is generated during the encryption process.')
+        hcurveFile_box = QHBoxLayout()
+        txt_curvefile = QLabel()
+        txt_curvefile.setStyleSheet('''
+        QLabel {
+            border:1px solid #161616;
+        }''')
+        boton_browsecurvefile = QPushButton(text="Load Curve File")
+        boton_browsecurvefile.setStyleSheet(aux_style)
+        boton_browsecurvefile.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_browsecurvefile.setFixedWidth(150)
+        boton_browsecurvefile.clicked.connect(lambda: browse_file(txt_curvefile))
+        hcurveFile_box.addWidget(boton_browsecurvefile)
+        hcurveFile_box.addWidget(txt_curvefile)
+        curveFile_layout.addWidget(curve_txt)
+        curveFile_layout.addLayout(hcurveFile_box)
+        v1boxElGamal.addWidget(groupBox_curveFile)
         groupBox_plaintxtPublicGamal = QGroupBox('Plain Text')
         plaintxtPublic_layoutGamal = QVBoxLayout()
         plaintxtPublicGamal = QPlainTextEdit()
-        plain_insGamal = QLabel('To encrypt, please make sure you introduced/generated a 256 bit prime number and the button to calculate the \nparameters has been pressed.')
+        plain_insGamal = QLabel('Please make sure you generated a '+'<b>'+ 'prime number '+'</b>'+ 'and the button to calculate the'+'<b>'+ ' parameters '+'</b>'+ '\nhas been pressed.')
         plaintxtPublic_layoutGamal.addWidget(plain_insGamal)
         plaintxtPublic_layoutGamal.addWidget(plaintxtPublicGamal)
         groupBox_plaintxtPublicGamal.setLayout(plaintxtPublic_layoutGamal)
@@ -2500,7 +2523,7 @@ class PublicKeyScreen(QDialog):
         groupBox_ciphertxtPublicGamal = QGroupBox('Cipher Text')
         ciphertxtPublic_layoutGamal = QVBoxLayout()
         ciphertxtPublicGamal = QPlainTextEdit()
-        cipher_insGamal = QLabel('To decrypt, please make sure you introduced the prime number used and the a parameter.')
+        cipher_insGamal = QLabel('Please make sure you introduced the '+'<b>'+ 'prime number'+'</b>'+ ', the'+'<b>'+ ' a parameter'+'</b>'+' and the '+'<b>'+'elliptic curve file ' +'</b>'+'is uploaded.')
         ciphertxtPublic_layoutGamal.addWidget(cipher_insGamal)
         ciphertxtPublic_layoutGamal.addWidget(ciphertxtPublicGamal)
         groupBox_ciphertxtPublicGamal.setLayout(ciphertxtPublic_layoutGamal)

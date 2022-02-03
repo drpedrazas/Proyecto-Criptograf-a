@@ -5,15 +5,18 @@ import elliptic_curve as ec
 import random
 import functools
 import re
-class M_V:
+from PyQt5.QtWidgets import *
 
-    def __init__(self, a = None):
-        self.curve = ec.elliptic_curve()
+class M_V:
+    def __init__(self, p=None, a_curve = None, b_curve = None, a = None):
+        self.curve = ec.elliptic_curve(p, a_curve, b_curve)
         self.alpha = self.curve.cyclic[0]
-        if a != None:
-            self.a = a % self.curve.p
-        else:
+        #if a != None:
+        #    self.a = a % self.curve.p
+        if a == None:
             self.a = random.randint(0,len(self.curve.cyclic)-1) + 1
+        else:
+            self.a = a
         self.beta = self.curve.cyclic[self.a-1]
 
     def encrypt(self, m, k):
@@ -36,7 +39,7 @@ class M_V:
         clear = c.strip().replace("(","").replace(")","").replace(" ","").split(",")
         c = (int(clear[0]),int(clear[1])), (int(clear[2]), int(clear[3]))
         inverse = self.find_inverse(c[0])
-        return  self.curve.curve_sum(c[1], 
+        return  self.curve.curve_sum(c[1],
                     functools.reduce(lambda x,y: self.curve.curve_sum(x,y), [inverse for _ in range(self.a)]))
 
     def encrypt_message(self, m, k):
@@ -45,4 +48,19 @@ class M_V:
 
     def decrypt_message(self, m):
         u = re.findall("\(\([0-9]*, *[0-9]*\),\([0-9]*, *[0-9]*\)\)", m.strip().replace(" ",""))
-        return ",".join(map(str, [self.decrypt(i) for i in u]))
+        return [self.decrypt(i) for i in u]
+
+    def save_curve_parameters(self):
+        f_name = str(self.curve.p)[-3:]+"elliptic_curve_parameters.txt"
+        file1 = open(f_name,"w")
+        file1.write(str(self.curve.p))
+        file1.write("\n")
+        file1.write(str(self.curve.a))
+        file1.write("\n")
+        file1.write(str(self.curve.b))
+        file1.write("\n")
+        file1.write(str(self.a))
+        file1.close()
+        QMessageBox.information(None, 'Elliptic curve file saved',
+                             'The file with the elliptic curve parameters has been saved here\n:'+f_name,
+                             QMessageBox.Ok)
