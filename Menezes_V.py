@@ -7,7 +7,8 @@ import functools
 import re
 from PyQt5.QtWidgets import *
 
-class M_V:def __init__(self, a, b, p, secret_a=None):
+class M_V:
+    def __init__(self, a=None, b=None, p=None, secret_a=None):
         self.curve = ec.elliptic_curve(p,a,b)
         self.cyclic = self.curve.gen_cyclic()
         self.alpha = self.cyclic[0]

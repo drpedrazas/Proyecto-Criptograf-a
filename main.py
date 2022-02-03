@@ -15,6 +15,7 @@ import sdes_new
 import itertools
 import RSA
 import elgamal
+import rabin
 import random
 import DSS
 from aux_prime_functions import *
@@ -2354,7 +2355,7 @@ class PublicKeyScreen(QDialog):
         ********************************Gamal Tab***********************************
         """
         def gen_prime_numGamal():
-            p1 = elgamal.find_prime(32, 5)
+            p1 = elgamal.find_prime(16, 5)
             primeGamal.setPlainText(str(p1))
         def calculate_parametersGamal():
             prime = primeGamal.toPlainText()
@@ -2531,6 +2532,31 @@ class PublicKeyScreen(QDialog):
 
         hboxElGamal.addLayout(v1boxElGamal, 4)
         hboxElGamal.addLayout(v2boxElGamal, 6)
+        """
+                ********************************Rabin Tab***********************************
+        """
+        def gen_prime_numRabin():
+        	rb = rabin.Rabin()
+            p, q, n = rb.get_key()
+            p_rb.setPlainText(str(p))
+            q_rb.setPlainText(str(q))
+            n_rb.setPlainText(str(n))
+        def clean_Rabin():
+            p_rb.setPlainText('')
+            q_rb.setPlainText('')
+            n_rb.setPlainText('')
+        def encrypt_Rabin():
+            elif p_rb.toPlainText() == '':
+                QMessageBox.critical(None, 'Missing Parameters',
+                                     'Calculate parameters first',
+                                     QMessageBox.Ok)
+                return
+            p_rb = int(p_rb.toPlainText())
+            q_rb = int(q_rb.toPlainText())
+            r_rb = int(r_rb.toPlainText())
+            prabin_text = plaintxtPublicRabin.toPlainText()
+            #cipher = elRabin.encrypt(p, alpha, beta, p_text)
+            #ciphertxtPublicRabin.setPlainText(cipher)
         """
         ********************************DSS Tab***********************************
         """

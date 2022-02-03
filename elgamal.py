@@ -66,7 +66,7 @@ def encrypt(prime, alpha, beta, sPlaintext):
     for pair in cipher_pairs:
         encryptedStr += '('+str(pair[0]) + ',' + str(pair[1]) + ')'
     mv = Menezes_V.M_V()
-    l_curve = len(mv.curve.cyclic)
+    l_curve = len(mv.cyclic)
     k = gen_key(l_curve)
     with open(str(k)+"elliptic_curve_parameters.dill", 'wb') as fp:
         dill.dump(mv, fp)
