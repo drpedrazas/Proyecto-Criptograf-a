@@ -45,5 +45,4 @@ class M_V:
 
     def decrypt_message(self, m):
         u = re.findall("\(\([0-9]*, *[0-9]*\),\([0-9]*, *[0-9]*\)\)", m.strip().replace(" ",""))
-        print(u)
         return ",".join(map(str, [self.decrypt(i) for i in u]))
