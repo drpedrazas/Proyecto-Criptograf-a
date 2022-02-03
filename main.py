@@ -16,6 +16,7 @@ import itertools
 import RSA
 import elgamal
 import random
+import DSS
 from aux_prime_functions import *
 from itertools import cycle
 from pyqtgraph import PlotWidget, plot
@@ -2145,7 +2146,7 @@ class PublicKeyScreen(QDialog):
         QTabBar::tab {
             background: #52F6E0;
             font-size: 15px;
-            min-width: 200px;
+            min-width: 240px;
             min-height: 30px;
             padding: 2px;
         }
@@ -2409,7 +2410,7 @@ class PublicKeyScreen(QDialog):
             plain = elgamal.decrypt(p, a, cipher)
             plaintxtPublicGamal.setPlainText(plain)
         ElGamalWidget = QtWidgets.QWidget()
-        tabPublicWidget.addTab(ElGamalWidget, "ElGamal Cryptosystem")
+        tabPublicWidget.addTab(ElGamalWidget, "ElGamal (Menezes - Vanstone)")
         hboxElGamal = QHBoxLayout()
         v1boxElGamal = QVBoxLayout()
         v2boxElGamal = QVBoxLayout()
@@ -2488,7 +2489,6 @@ class PublicKeyScreen(QDialog):
         buttonsGamal_layout.addWidget(boton_limpiar_Gamal)
         buttonsGamal_layout.setAlignment(Qt.AlignCenter)
         v1boxElGamal.addWidget(groupBox_buttonsGamal)
-
         groupBox_plaintxtPublicGamal = QGroupBox('Plain Text')
         plaintxtPublic_layoutGamal = QVBoxLayout()
         plaintxtPublicGamal = QPlainTextEdit()
@@ -2508,7 +2508,300 @@ class PublicKeyScreen(QDialog):
 
         hboxElGamal.addLayout(v1boxElGamal, 4)
         hboxElGamal.addLayout(v2boxElGamal, 6)
+        """
+        ********************************DSS Tab***********************************
+        """
+        def browse_file(txt_par):
+            fname = QFileDialog.getOpenFileName(None, 'Select file', QtCore.QDir.rootPath())
+            txt_par.setText(fname[0])
+        def gen_keys_sign(file_name):
+            if file_name == '':
+                QMessageBox.critical(None, 'Missing File',
+                                     'Select the file to sign first',
+                                     QMessageBox.Ok)
+                return
+            QMessageBox.information(None, 'Generating keys',
+                                 'Appropiate keys sometimes take a while to generate, please wait up to 2 min.',
+                                 QMessageBox.Ok)
+            file_name = file_name.split('.')[0]
+            p, q, g, h, a = DSS.keyGeneration(file_name)
+            DSSp_pt.setPlainText(p)
+            DSSq_pt.setPlainText(q)
+            DSSg_pt.setPlainText(g)
+            DSSh_pt.setPlainText(h)
+            DSSa_pt.setPlainText(a)
+            QMessageBox.information(None, 'Keys Created',
+                                    'You can find the verification keys in the file:\n' + file_name+"_VerificationKeys.txt \n"
+                                    +"and the secret key:\n" + file_name+"_SecretKey.txt",
+                                    QMessageBox.Ok)
+        def sign_file(file_name, p, q, g, h, a):
+            if file_name == '':
+                QMessageBox.critical(None, 'Missing File',
+                                     'Select the file to sign first',
+                                     QMessageBox.Ok)
+                return
+            elif DSSa_pt.toPlainText() == '':
+                QMessageBox.critical(None, 'Missing Keys',
+                                     'Keys have not been generated, please press the Generate Keys Button before signing the file',
+                                     QMessageBox.Ok)
+                return
+            c1, c2, shahash = DSS.sign(file_name, int(p), int(q), int(g), int(h), int(a))
+            hash_pt.setPlainText(shahash)
+            signature_pt.setPlainText(c1+', '+c2)
+            QMessageBox.information(None, 'Success',
+                                 'The document has been signed, the signed file can be found here:\n'+file_name.split('.')[0]+"signature.txt",
+                                 QMessageBox.Ok)
+        def clean_signDSS():
+            DSSp_pt.setPlainText('')
+            DSSq_pt.setPlainText('')
+            DSSg_pt.setPlainText('')
+            DSSh_pt.setPlainText('')
+            DSSa_pt.setPlainText('')
+            hash_pt.setPlainText('')
+            signature_pt.setPlainText('')
+            txt_file.setText('')
 
+        def clean_verDSS():
+            txt_filev.setText('')
+            txt_signaturev.setText('')
+            txt_ver_keyv.setText('')
+            txt_veroutput.setText('')
+            txt_veroutput.setStyleSheet("""
+            QLabel {
+                border:1px solid #161616;
+            }
+            """
+            )
+
+        def verify(file_name, file_sign, file_verkeys):
+            if (file_name == '' or file_sign == '' or file_verkeys == ''):
+                QMessageBox.critical(None, 'Files Missing',
+                                     'Please make sure you uploaded all three files above.',
+                                     QMessageBox.Ok)
+                return
+            valid = DSS.verification(file_name, file_sign, file_verkeys)
+            if valid:
+                txt_veroutput.setText("Valid Signature")
+                txt_veroutput.setStyleSheet("""
+                QLabel {
+                    border:1px solid #161616;
+                    background: #A0FFC7;
+                }
+                """
+                )
+            else:
+                txt_veroutput.setText("Invalid Signature")
+                txt_veroutput.setStyleSheet("""
+                QLabel {
+                    border:1px solid #161616;
+                    background: #FFC2A0;
+                }
+                """
+                )
+        DSSWidget = QtWidgets.QWidget()
+        tabPublicWidget.addTab(DSSWidget, "Digital Signature System (DSS)")
+        vboxDSS = QVBoxLayout()
+        DSSWidget.setLayout(vboxDSS)
+        ###Sign
+        groupBox_SignDSS = QGroupBox('Sign')
+        groupBoxLayout_SignDSS = QVBoxLayout(groupBox_SignDSS)
+        hsignDSS_box = QHBoxLayout()
+        vKeysDSS_box = QVBoxLayout()
+        vHashDSS_box = QVBoxLayout()
+        hfileDSS_box = QHBoxLayout()
+        txt_file = QLabel()
+        txt_file.setStyleSheet('''
+        QLabel {
+            border:1px solid #161616;
+        }''')
+        boton_browsefile = QPushButton(text="Load File")
+        boton_browsefile.setStyleSheet(aux_style)
+        boton_browsefile.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_browsefile.setFixedWidth(150)
+        boton_browsefile.clicked.connect(lambda: browse_file(txt_file))
+        hfileDSS_box.addWidget(boton_browsefile)
+        hfileDSS_box.addWidget(txt_file)
+        vKeysDSS_box.addLayout(hfileDSS_box)
+        hgenKeysDSS_box = QHBoxLayout()
+        boton_genKeysDSS = QPushButton(text="Generate Keys")
+        boton_genKeysDSS.setStyleSheet(aux_style)
+        boton_genKeysDSS.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_genKeysDSS.setFixedWidth(150)
+        hgenKeysDSS_box.setAlignment(Qt.AlignCenter)
+        hgenKeysDSS_box.addWidget(boton_genKeysDSS)
+        boton_genKeysDSS.clicked.connect(lambda: gen_keys_sign(txt_file.text()))
+        txt_ver = QLabel('Verification Key: ')
+        txt_sign = QLabel('Signing Key: ')
+        txt_DSSp = QLabel('    p = ')
+        txt_DSSq = QLabel('    q = ')
+        txt_DSSg = QLabel('    g = ')
+        txt_DSSh = QLabel('    h = ')
+        txt_DSSa = QLabel('    a = ')
+        DSSp_pt = QPlainTextEdit()
+        DSSq_pt = QPlainTextEdit()
+        DSSg_pt = QPlainTextEdit()
+        DSSh_pt = QPlainTextEdit()
+        DSSa_pt = QPlainTextEdit()
+        h1_keysDSS = QHBoxLayout()
+        h2_keysDSS = QHBoxLayout()
+        h3_keysDSS = QHBoxLayout()
+        h4_keysDSS = QHBoxLayout()
+        h5_keysDSS = QHBoxLayout()
+        h1_keysDSS.addWidget(txt_DSSp)
+        h1_keysDSS.addWidget(DSSp_pt)
+        h2_keysDSS.addWidget(txt_DSSq)
+        h2_keysDSS.addWidget(DSSq_pt)
+        h3_keysDSS.addWidget(txt_DSSg)
+        h3_keysDSS.addWidget(DSSg_pt)
+        h4_keysDSS.addWidget(txt_DSSh)
+        h4_keysDSS.addWidget(DSSh_pt)
+        h5_keysDSS.addWidget(txt_DSSa)
+        h5_keysDSS.addWidget(DSSa_pt)
+        vKeysDSS_box.addWidget(txt_ver)
+        vKeysDSS_box.addLayout(h1_keysDSS)
+        vKeysDSS_box.addLayout(h2_keysDSS)
+        vKeysDSS_box.addLayout(h3_keysDSS)
+        vKeysDSS_box.addLayout(h4_keysDSS)
+        vKeysDSS_box.addWidget(txt_sign)
+        vKeysDSS_box.addLayout(h5_keysDSS)
+        vKeysDSS_box.addLayout(hgenKeysDSS_box)
+        hsignDSS_box.addLayout(vKeysDSS_box)
+        hhashDSS_box = QHBoxLayout()
+        boton_signDSS = QPushButton(text="Sign File")
+        boton_signDSS.setStyleSheet(
+            """
+            QPushButton {
+                border-radius:5%;
+                padding:5px;
+                background:#52F6E0;
+                font: 12pt;
+                font: semi-bold;
+            }
+            QPushButton:hover {
+                background-color: #13A5EE;
+                color:white;
+                font: bold;
+                }
+            """)
+        boton_signDSS.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_signDSS.setFixedWidth(150)
+        boton_signDSS.clicked.connect(lambda: sign_file(txt_file.text(), DSSp_pt.toPlainText(), DSSq_pt.toPlainText(), DSSg_pt.toPlainText(), DSSh_pt.toPlainText(), DSSa_pt.toPlainText()))
+        hhashDSS_box.setAlignment(Qt.AlignCenter)
+        txt_hash = QLabel('SHA-Hash:')
+        hash_pt = QPlainTextEdit()
+        txt_signature = QLabel('Signature:')
+        signature_pt = QPlainTextEdit()
+        hhashDSS_box.addWidget(boton_signDSS)
+        vHashDSS_box.addLayout(hhashDSS_box)
+        vHashDSS_box.addWidget(txt_hash)
+        vHashDSS_box.addWidget(hash_pt)
+        vHashDSS_box.addWidget(txt_signature)
+        vHashDSS_box.addWidget(signature_pt)
+        hcleanDSS_box = QHBoxLayout()
+        boton_cleansignDSS = QPushButton(text="Clean Fields")
+        boton_cleansignDSS.setStyleSheet(aux_style)
+        boton_cleansignDSS.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_cleansignDSS.setFixedWidth(150)
+        boton_cleansignDSS.clicked.connect(lambda: clean_signDSS())
+        hcleanDSS_box.setAlignment(Qt.AlignCenter)
+        hcleanDSS_box.addWidget(boton_cleansignDSS)
+        vHashDSS_box.addLayout(hcleanDSS_box)
+        hsignDSS_box.addLayout(vHashDSS_box)
+        groupBoxLayout_SignDSS.addLayout(hsignDSS_box)
+        #Verificate
+        groupBox_VerDSS = QGroupBox('Verify Signature')
+        groupBoxLayout_VerDSS = QVBoxLayout(groupBox_VerDSS)
+        hver1DSS_box = QHBoxLayout()
+        hver2DSS_box = QHBoxLayout()
+        hver3DSS_box = QHBoxLayout()
+        hver4DSS_box = QHBoxLayout()
+        hver5DSS_box = QHBoxLayout()
+        boton_browsefilev = QPushButton(text="Load File")
+        boton_browsefilev.setStyleSheet(aux_style)
+        boton_browsefilev.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_browsefilev.setFixedWidth(150)
+        boton_browsefilev.clicked.connect(lambda: browse_file(txt_filev))
+        txt_filev = QLabel()
+        txt_filev.setStyleSheet('''
+        QLabel {
+            border:1px solid #161616;
+        }''')
+        boton_browsesignaturev = QPushButton(text="Load signature")
+        boton_browsesignaturev.setStyleSheet(aux_style)
+        boton_browsesignaturev.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_browsesignaturev.setFixedWidth(150)
+        boton_browsesignaturev.clicked.connect(lambda: browse_file(txt_signaturev))
+        txt_signaturev = QLabel()
+        txt_signaturev.setStyleSheet('''
+        QLabel {
+            border:1px solid #161616;
+        }''')
+        boton_browsever_keyv = QPushButton(text="Load Verification Key")
+        boton_browsever_keyv.setStyleSheet(aux_style)
+        boton_browsever_keyv.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_browsever_keyv.setFixedWidth(150)
+        boton_browsever_keyv.clicked.connect(lambda: browse_file(txt_ver_keyv))
+        txt_ver_keyv = QLabel()
+        txt_ver_keyv.setStyleSheet('''
+        QLabel {
+            border:1px solid #161616;
+        }''')
+        hver1DSS_box.addWidget(boton_browsefilev)
+        hver1DSS_box.addWidget(txt_filev)
+        hver2DSS_box.addWidget(boton_browsesignaturev)
+        hver2DSS_box.addWidget(txt_signaturev)
+        hver3DSS_box.addWidget(boton_browsever_keyv)
+        hver3DSS_box.addWidget(txt_ver_keyv)
+        boton_verDSS = QPushButton(text="Verify Signature")
+        boton_verDSS.setStyleSheet(
+            """
+            QPushButton {
+                border-radius:5%;
+                padding:5px;
+                background:#52F6E0;
+                font: 12pt;
+                font: semi-bold;
+            }
+            QPushButton:hover {
+                background-color: #13A5EE;
+                color:white;
+                font: bold;
+                }
+            """)
+        boton_verDSS.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_verDSS.setFixedWidth(150)
+        boton_verDSS.clicked.connect(lambda: verify(txt_filev.text(), txt_signaturev.text(), txt_ver_keyv.text()))
+        hver4DSS_box.addWidget(boton_verDSS)
+        verResult_label = QLabel("Result")
+        verResult_label.setFixedWidth(150)
+        verResult_label.setStyleSheet('''
+        QLabel {
+            font: 12pt;
+        }''')
+        txt_veroutput = QLabel()
+        txt_veroutput.setStyleSheet('''
+        QLabel {
+            border:1px solid #161616;
+        }''')
+        txt_veroutput.setAlignment(Qt.AlignLeft)
+        hver5DSS_box.addWidget(verResult_label)
+        hver5DSS_box.addWidget(txt_veroutput)
+        hcleanDSSver_box = QHBoxLayout()
+        boton_cleanverDSS = QPushButton(text="Clean Fields")
+        boton_cleanverDSS.setStyleSheet(aux_style)
+        boton_cleanverDSS.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_cleanverDSS.setFixedWidth(150)
+        boton_cleanverDSS.clicked.connect(lambda: clean_verDSS())
+        hcleanDSSver_box.setAlignment(Qt.AlignCenter)
+        hcleanDSSver_box.addWidget(boton_cleanverDSS)
+        groupBoxLayout_VerDSS.addLayout(hver1DSS_box)
+        groupBoxLayout_VerDSS.addLayout(hver2DSS_box)
+        groupBoxLayout_VerDSS.addLayout(hver3DSS_box)
+        groupBoxLayout_VerDSS.addLayout(hver4DSS_box)
+        groupBoxLayout_VerDSS.addLayout(hver5DSS_box)
+        groupBoxLayout_VerDSS.addLayout(hcleanDSSver_box)
+        vboxDSS.addWidget(groupBox_SignDSS)
+        vboxDSS.addWidget(groupBox_VerDSS)
 """
 Interfaz & Layout
 """
