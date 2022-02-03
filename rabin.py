@@ -101,8 +101,6 @@ class Rabin:
         if r_3 < 0:
             r_3 = self.n + r_3
         r_4 = self.n - r_3
-        print(r_1,r_2,r_3,r_4)
-        print((r_1**2) % self.n,(r_2**2) % self.n,(r_3**2) % self.n,(r_4**2) % self.n)
         return chr(r_1), chr(r_2), chr(r_3), chr(r_4)
 
     def encrypt_message2(self, m):
@@ -115,8 +113,3 @@ class Rabin:
                 if j in string.ascii_letters:
                     yield j
                     break
-
-rb = Rabin(10)
-message= "Hello"
-encrypted = list(rb.encrypt_message2(message))
-print(list(rb.decrypt_message2(encrypted)))
