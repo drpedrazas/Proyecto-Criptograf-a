@@ -56,8 +56,12 @@ class elliptic_curve:
         if l == None:
             return "O"
         else:
-            x_3 = self.modular_sus(self.modular_sus(self.modular_mult(l, l), P[0]) , Q[0])
-            y_3 = self.modular_sus(self.modular_mult(l , (self.modular_sus(P[0] , x_3))) , P[1])
+            x_3 = self.modular_sus(
+                self.modular_sus(
+                    self.modular_mult(l, l), P[0]) , Q[0])
+            y_3 = self.modular_sus(
+                self.modular_mult(l , (
+                    self.modular_sus(P[0] , x_3))) , P[1])
             return x_3, y_3
 
     def gen_group(self,Q):
