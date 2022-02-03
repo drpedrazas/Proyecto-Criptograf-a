@@ -9,19 +9,22 @@ from elgamal import gen_key
 class Rabin:
 
     def __init__(self, bits, p = None, q = None):
-        self.p, self.q, self.n = self.gen_key(bits)
+        if p != None:
+            self.p, self.q, self.n = p, q, p*q
+        else:
+            self.p, self.q, self.n = self.gen_key(bits)
 
     def gen_key(self,bits):
-        p = find_prime(bits,60)
-        q = find_prime(bits,60)
+        p = find_prime(bits,16)
+        q = find_prime(bits,16)
         p_done = (p % 4) == 3
         q_done = (q % 4) == 3
         while not (p_done and q_done):
             if not p_done:
-                p = find_prime(bits,60)
+                p = find_prime(bits,16)
                 p_done = (p % 4) == 3
             if not q_done:
-                q = find_prime(bits,60)
+                q = find_prime(bits,16)
                 q_done = (q % 4) == 3
         return p, q , p*q
 
@@ -87,8 +90,8 @@ class Rabin:
         return clear_texts
 
     def encrypt2(self, cha):
-        print(ord(cha))
         return (ord(cha) ** 2) % self.n
+
     def decrypt2(self, c):
         root_p = modexp(c,int((self.p + 1) / 4),self.p)
         root_q = modexp(c,int((self.q + 1) / 4),self.q)
@@ -101,11 +104,17 @@ class Rabin:
         if r_3 < 0:
             r_3 = self.n + r_3
         r_4 = self.n - r_3
-        return chr(r_1), chr(r_2), chr(r_3), chr(r_4)
+        ra = chr(r_1)
+        rb = chr(r_2)
+        rc = chr(r_3)
+        rd = chr(r_4)
+        return ra, rb, rc, rd
 
     def encrypt_message2(self, m):
+        s = list()
         for i in m:
-            yield self.encrypt2(i)
+            s.append(self.encrypt2(i))
+        return s
 
     def decrypt_message2(self, m):
         for i in m:

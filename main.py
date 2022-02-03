@@ -2322,8 +2322,10 @@ class PublicKeyScreen(QDialog):
         groupBox_plaintxtPublic = QGroupBox('Plain Text')
         plaintxtPublic_layout = QVBoxLayout()
         plaintxtPublic = QPlainTextEdit()
-        plain_ins = QLabel('To encrypt, please make sure you introduced/generated two big different \nprime numbers and the button to calculate parameters has been pressed.')
-        plaintxtPublic_layout.addWidget(plain_ins)
+        plain_ins1 = QLabel('Please make sure you generated two '+'<b>'+ 'different prime numbers '+'</b>')
+        plain_ins2 = QLabel('and the button to calculate the'+'<b>'+ ' parameters '+'</b>'+ 'has been pressed.')
+        plaintxtPublic_layout.addWidget(plain_ins1)
+        plaintxtPublic_layout.addWidget(plain_ins2)
         plaintxtPublic_layout.addWidget(plaintxtPublic)
         groupBox_plaintxtPublic.setLayout(plaintxtPublic_layout)
         h2boxRSA.addWidget(groupBox_plaintxtPublic)
@@ -2345,8 +2347,10 @@ class PublicKeyScreen(QDialog):
         groupBox_ciphertxtPublic = QGroupBox('Cipher Text')
         ciphertxtPublic_layout = QVBoxLayout()
         ciphertxtPublic = QPlainTextEdit()
-        cipher_ins = QLabel('To decrypt, please make sure you introduced n and a parameters. Also, separate \neach value by a comma.')
-        ciphertxtPublic_layout.addWidget(cipher_ins)
+        cipher_ins1 = QLabel('To decrypt, please make sure you introduced ' +'<b>'+ 'n'+'</b>'+' and ' +'<b>'+ 'a'+'</b>'+' parameters.')
+        cipher_ins2 = QLabel('Also, please separate the values by a comma.')
+        ciphertxtPublic_layout.addWidget(cipher_ins1)
+        ciphertxtPublic_layout.addWidget(cipher_ins2)
         ciphertxtPublic_layout.addWidget(ciphertxtPublic)
         groupBox_ciphertxtPublic.setLayout(ciphertxtPublic_layout)
         h2boxRSA.addWidget(groupBox_ciphertxtPublic)
@@ -2355,7 +2359,7 @@ class PublicKeyScreen(QDialog):
         ********************************Gamal Tab***********************************
         """
         def gen_prime_numGamal():
-            p1 = elgamal.find_prime(16, 5)
+            p1 = elgamal.find_prime(18, 4)
             primeGamal.setPlainText(str(p1))
         def calculate_parametersGamal():
             prime = primeGamal.toPlainText()
@@ -2533,10 +2537,10 @@ class PublicKeyScreen(QDialog):
         hboxElGamal.addLayout(v1boxElGamal, 4)
         hboxElGamal.addLayout(v2boxElGamal, 6)
         """
-                ********************************Rabin Tab***********************************
+        ********************************Rabin Tab***********************************
         """
         def gen_prime_numRabin():
-        	rb = rabin.Rabin()
+            rb = rabin.Rabin(8)
             p, q, n = rb.get_key()
             p_rb.setPlainText(str(p))
             q_rb.setPlainText(str(q))
@@ -2545,18 +2549,114 @@ class PublicKeyScreen(QDialog):
             p_rb.setPlainText('')
             q_rb.setPlainText('')
             n_rb.setPlainText('')
+            ciphertxtPublicRabin.setPlainText('')
+            plaintxtPublicRabin.setPlainText('')
         def encrypt_Rabin():
-            elif p_rb.toPlainText() == '':
+            if p_rb.toPlainText() == '':
                 QMessageBox.critical(None, 'Missing Parameters',
                                      'Calculate parameters first',
                                      QMessageBox.Ok)
                 return
-            p_rb = int(p_rb.toPlainText())
-            q_rb = int(q_rb.toPlainText())
-            r_rb = int(r_rb.toPlainText())
-            prabin_text = plaintxtPublicRabin.toPlainText()
-            #cipher = elRabin.encrypt(p, alpha, beta, p_text)
-            #ciphertxtPublicRabin.setPlainText(cipher)
+            p = int(p_rb.toPlainText())
+            q = int(q_rb.toPlainText())
+            rb = rabin.Rabin(8, p, q)
+            p_text = plaintxtPublicRabin.toPlainText()
+            cipher = rb.encrypt_message2(p_text)
+            ciphertxtPublicRabin.setPlainText(str(cipher).strip('[]'))
+        def decrypt_Rabin():
+            if p_rb.toPlainText() == '':
+                QMessageBox.critical(None, 'Missing Parameters',
+                                     'Input parameters p and q first',
+                                     QMessageBox.Ok)
+                return
+            p = int(p_rb.toPlainText())
+            q = int(q_rb.toPlainText())
+            rb = rabin.Rabin(8, p, q)
+            cipher_txt = ciphertxtPublicRabin.toPlainText().split(',')
+            cipher = [int(n) for n in cipher_txt]
+            plain = list(rb.decrypt_message2(cipher))
+            if len(plain) > 0:
+                plaintext = ''.join(plain)
+            else:
+                plaintext = ''
+            plaintxtPublicRabin.setPlainText(plaintext)
+        RabinWidget = QtWidgets.QWidget()
+        tabPublicWidget.addTab(RabinWidget, "Rabin Cryptosystem")
+        hboxRabin = QHBoxLayout()
+        v1boxRabin = QVBoxLayout()
+        v2boxRabin = QVBoxLayout()
+        RabinWidget.setLayout(hboxRabin)
+        ###v1boxRabin-----------------------
+        #Group Box ----------  Parameters
+        groupBox_parametersRabin = QGroupBox('Parameters')
+        groupBoxLayout_parametersRabin = QVBoxLayout(groupBox_parametersRabin)
+        groupBoxLayout_parametersRabin.setAlignment(QtCore.Qt.AlignCenter)
+        h1_paramRabin = QHBoxLayout()
+        h2_paramRabin = QHBoxLayout()
+        h3_paramRabin = QHBoxLayout()
+        h5_buttonRabin = QHBoxLayout()
+        boton_genParRabin = QPushButton(text="Calculate")
+        boton_genParRabin.setStyleSheet(aux_style)
+        boton_genParRabin.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_genParRabin.setFixedWidth(150)
+        h5_buttonRabin.setAlignment(Qt.AlignCenter)
+        h5_buttonRabin.addWidget(boton_genParRabin)
+        txt_publickRabin = QLabel('Private Key: ')
+        txt_privatekRabin = QLabel('Public Key: ')
+        txt_p_rb = QLabel('    p = ')
+        txt_q_rb = QLabel('    q = ')
+        txt_n_rb = QLabel('    n = ')
+        p_rb = QPlainTextEdit()
+        q_rb = QPlainTextEdit()
+        n_rb = QPlainTextEdit()
+        h1_paramRabin.addWidget(txt_p_rb)
+        h1_paramRabin.addWidget(p_rb)
+        h2_paramRabin.addWidget(txt_q_rb)
+        h2_paramRabin.addWidget(q_rb)
+        h3_paramRabin.addWidget(txt_n_rb)
+        h3_paramRabin.addWidget(n_rb)
+        groupBoxLayout_parametersRabin.addWidget(txt_publickRabin)
+        groupBoxLayout_parametersRabin.addLayout(h1_paramRabin)
+        groupBoxLayout_parametersRabin.addLayout(h2_paramRabin)
+        groupBoxLayout_parametersRabin.addWidget(txt_privatekRabin)
+        groupBoxLayout_parametersRabin.addLayout(h3_paramRabin)
+        groupBoxLayout_parametersRabin.addLayout(h5_buttonRabin)
+        v1boxRabin.addWidget(groupBox_parametersRabin)
+        boton_genParRabin.clicked.connect(lambda: gen_prime_numRabin())
+        groupBox_buttonsRabin = QGroupBox('')
+        buttonsRabin_layout = QVBoxLayout(groupBox_buttonsRabin)
+        boton_cipher_Rabin = crearBoton(cifrado=True)
+        boton_decipher_Rabin = crearBoton(cifrado=False)
+        boton_limpiar_Rabin = QPushButton(text="Clean All")
+        boton_limpiar_Rabin.setStyleSheet(aux_style)
+        boton_limpiar_Rabin.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        boton_limpiar_Rabin.setFixedWidth(150)
+        boton_cipher_Rabin.clicked.connect(encrypt_Rabin)
+        boton_decipher_Rabin.clicked.connect(decrypt_Rabin)
+        boton_limpiar_Rabin.clicked.connect(clean_Rabin)
+        buttonsRabin_layout.addWidget(boton_cipher_Rabin)
+        buttonsRabin_layout.addWidget(boton_decipher_Rabin)
+        buttonsRabin_layout.addWidget(boton_limpiar_Rabin)
+        buttonsRabin_layout.setAlignment(Qt.AlignCenter)
+        v1boxRabin.addWidget(groupBox_buttonsRabin)
+        groupBox_plaintxtPublicRabin = QGroupBox('Plain Text')
+        plaintxtPublic_layoutRabin = QVBoxLayout()
+        plaintxtPublicRabin = QPlainTextEdit()
+        plain_insRabin = QLabel('Please make sure the button to calculate the'+'<b>'+ ' parameters '+'</b>'+ '\nhas been pressed.')
+        plaintxtPublic_layoutRabin.addWidget(plain_insRabin)
+        plaintxtPublic_layoutRabin.addWidget(plaintxtPublicRabin)
+        groupBox_plaintxtPublicRabin.setLayout(plaintxtPublic_layoutRabin)
+        v2boxRabin.addWidget(groupBox_plaintxtPublicRabin)
+        groupBox_ciphertxtPublicRabin = QGroupBox('Cipher Text')
+        ciphertxtPublic_layoutRabin = QVBoxLayout()
+        ciphertxtPublicRabin = QPlainTextEdit()
+        cipher_insRabin = QLabel('Please make sure you introduced the prime numbers'+'<b>'+ ' p '+'</b>'+ 'and'+'<b>'+ ' q.'+'</b>')
+        ciphertxtPublic_layoutRabin.addWidget(cipher_insRabin)
+        ciphertxtPublic_layoutRabin.addWidget(ciphertxtPublicRabin)
+        groupBox_ciphertxtPublicRabin.setLayout(ciphertxtPublic_layoutRabin)
+        v2boxRabin.addWidget(groupBox_ciphertxtPublicRabin)
+        hboxRabin.addLayout(v1boxRabin, 3)
+        hboxRabin.addLayout(v2boxRabin, 7)
         """
         ********************************DSS Tab***********************************
         """
