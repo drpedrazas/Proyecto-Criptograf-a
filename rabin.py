@@ -23,7 +23,6 @@ class Rabin:
             if not q_done:
                 q = find_prime(bits,60)
                 q_done = (q % 4) == 3
-        print(p,q)
         return p, q , p*q
 
     def get_key(self):
@@ -38,8 +37,6 @@ class Rabin:
     def encrypt(self, m):
         each = [hex(ord(i))[2:]  for i in m]
         number = "0x"+"".join(each)
-        print("Sin encriptar:" , int(number,16))
-        print("Encriptado: ", (int(number,16) ** 2) % self.n)
         return (int(number,16) ** 2) % self.n
 
     def extendedEuclid(self,a, b):
@@ -63,10 +60,8 @@ class Rabin:
         return old_r, old_s, old_t
 
     def decrypt(self,c):
-        print("texto encriptado: ",c)
         root_p = modexp(c,int((self.p + 1) / 4),self.p)
         root_q = modexp(c,int((self.q + 1) / 4),self.q)
-        print("made it")
         y_p, y_q = self.extendedEuclid(self.p,self.q)[1:]
         r_1 = (y_p*self.p*root_q + y_q * self.q * root_p) % self.n
         if r_1 < 0:
@@ -90,3 +85,31 @@ class Rabin:
                 text += character
             clear_texts.append(text)
         return clear_texts
+
+    def encrypt2(self, cha):
+        print(ord(cha))
+        return (ord(cha) ** 2) % self.n
+    def decrypt2(self, c):
+        root_p = modexp(c,int((self.p + 1) / 4),self.p)
+        root_q = modexp(c,int((self.q + 1) / 4),self.q)
+        y_p, y_q = self.extendedEuclid(self.p,self.q)[1:]
+        r_1 = (y_p*self.p*root_q + y_q * self.q * root_p) % self.n
+        if r_1 < 0:
+            r_1 = self.n + r_1
+        r_2 = self.n - r_1
+        r_3 = (y_p * self.p * root_q - y_q * self.q * root_p) % self.n
+        if r_3 < 0:
+            r_3 = self.n + r_3
+        r_4 = self.n - r_3
+        return chr(r_1), chr(r_2), chr(r_3), chr(r_4)
+
+    def encrypt_message2(self, m):
+        for i in m:
+            yield self.encrypt2(i)
+
+    def decrypt_message2(self, m):
+        for i in m:
+            for j in self.decrypt2(i):
+                if j in string.ascii_letters:
+                    yield j
+                    break

@@ -7,22 +7,20 @@ import functools
 import re
 from PyQt5.QtWidgets import *
 
-class M_V:
-    def __init__(self, p=None, a_curve = None, b_curve = None, a = None):
-        self.curve = ec.elliptic_curve(p, a_curve, b_curve)
-        self.alpha = self.curve.cyclic[0]
-        #if a != None:
-        #    self.a = a % self.curve.p
-        if a == None:
-            self.a = random.randint(0,len(self.curve.cyclic)-1) + 1
+class M_V:def __init__(self, a, b, p, secret_a=None):
+        self.curve = ec.elliptic_curve(p,a,b)
+        self.cyclic = self.curve.gen_cyclic()
+        self.alpha = self.cyclic[0]
+        if secret_a != None:
+            self.a = secret_a % self.curve.p
         else:
-            self.a = a
-        self.beta = self.curve.cyclic[self.a-1]
+            self.a = random.randint(0,len(self.cyclic)-1) + 1
+        self.beta = self.cyclic[self.a-1]
 
     def encrypt(self, m, k):
         m = m.strip().replace(" ", "").replace("(","").replace(")","").split(",")
         m = int(m[0]), int(m[1])
-        x = self.curve.cyclic[k-1]
+        x = self.cyclic[k-1]
         k_beta = functools.reduce(lambda x, y: self.curve.curve_sum(x,y), [self.beta for _ in range(k)])
         y = self.curve.curve_sum(m,k_beta)
         return x, y
