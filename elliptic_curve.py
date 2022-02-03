@@ -18,7 +18,7 @@ class elliptic_curve:
             self.a, self.b = self.gen_parameters()
         self.equation = lambda x, y: (y**2 - x**3 - self.a*x - self.b) % self.p
         self.dots = dict()
-        self.cyclic = self.gen_cyclic()
+        self.cyclic = None
 
     def gen_parameters(self):
         for i in range(self.p):
